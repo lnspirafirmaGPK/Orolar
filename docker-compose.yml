@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:///./orolar.db
+      - SECRET_KEY=changethis_in_production
+      - COSMIC_SALT=The_Lonely_Dawn_DOCKER
+      # Add API Keys here or in .env file
+    volumes:
+      - .:/app

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Orolar Harmonic Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen font-sans">
+    <div class="container mx-auto p-8 max-w-2xl">
+        <header class="mb-8 text-center">
+            <h1 class="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600">
+                OROLAR PLATFORM
+            </h1>
+            <p class="text-slate-400 mt-2">Harmonic Resonance AI Interface</p>
+        </header>
+
+        <!-- Auth Section -->
+        <div id="authSection" class="bg-slate-800 p-6 rounded-lg shadow-lg mb-6">
+            <h2 class="text-xl font-bold mb-4">🔮 Login / Register</h2>
+            <div class="flex gap-2">
+                <input id="email" type="email" placeholder="Email" class="bg-slate-700 p-2 rounded w-full text-white">
+                <input id="password" type="password" placeholder="Password" class="bg-slate-700 p-2 rounded w-full text-white">
+            </div>
+            <div class="mt-4 flex gap-4">
+                <button onclick="login()" class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded transition">Login</button>
+                <button onclick="register()" class="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded transition">Register</button>
+            </div>
+            <p id="authStatus" class="mt-2 text-sm text-yellow-400"></p>
+        </div>
+
+        <!-- Chat Section (Hidden by default) -->
+        <div id="chatSection" class="hidden bg-slate-800 p-6 rounded-lg shadow-lg">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">💬 Resonance Chat</h2>
+                <span id="userBalance" class="text-green-400 font-mono">$0.00</span>
+            </div>
+
+            <div id="chatBox" class="bg-slate-900 h-64 overflow-y-auto p-4 rounded mb-4 border border-slate-700">
+                <p class="text-slate-500 text-center">System initialized. Waiting for input...</p>
+            </div>
+
+            <div class="flex gap-2">
+                <select id="modelSelect" class="bg-slate-700 p-2 rounded text-white">
+                    <option value="gemini">Gemini (Fast)</option>
+                    <option value="claude">Claude (Smart)</option>
+                    <option value="gpt">GPT-4 (Power)</option>
+                    <option value="grok">Grok (xAI)</option>
+                </select>
+                <input id="messageInput" type="text" placeholder="Type your message..." class="bg-slate-700 p-2 rounded w-full text-white">
+                <button onclick="sendMessage()" class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
