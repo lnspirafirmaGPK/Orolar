@@ -1,57 +1,548 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>Orolar Harmonic Platform</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orolar AI - Genesis Interface</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+
+        body {
+            margin: 0;
+            background-color: #050505;
+            color: #e0e0e0;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 0;
+            filter: blur(2px) contrast(1.2);
+        }
+
+        .ui-wrapper {
+            position: relative;
+            z-index: 10;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: radial-gradient(circle at center, transparent 0%, rgba(5, 5, 5, 0.8) 100%);
+        }
+
+        .glass-panel {
+            background: rgba(15, 15, 15, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        #chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            scroll-behavior: smooth;
+        }
+
+        #chat-container::-webkit-scrollbar { width: 4px; }
+        #chat-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+
+        .msg {
+            max-width: 85%;
+            padding: 14px 20px;
+            border-radius: 18px;
+            font-size: 15px;
+            line-height: 1.6;
+            animation: slideUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+            word-wrap: break-word;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .msg.human {
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            color: #93c5fd;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .msg.ai {
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            color: #ddd6fe;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .msg.wisdom {
+            background: rgba(234, 179, 8, 0.1);
+            border: 1px solid rgba(234, 179, 8, 0.3);
+            color: #fef08a;
+            align-self: center;
+            text-align: center;
+            font-size: 13px;
+            font-style: italic;
+        }
+
+        .msg.error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+            align-self: center;
+            font-size: 13px;
+        }
+
+        .input-box-area {
+            padding: 20px 24px 40px 24px;
+        }
+
+        .main-input {
+            transition: all 0.3s ease;
+        }
+
+        .main-input:focus-within {
+            border-color: rgba(139, 92, 246, 0.5);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
+        }
+
+        .loading-dots:after {
+            content: '.';
+            animation: dots 1.5s steps(5, end) infinite;
+        }
+        @keyframes dots { 0%, 20% { content: '.'; } 40% { content: '..'; } 60% { content: '...'; } 80%, 100% { content: ''; } }
+
+        /* Mood indicator */
+        .mood-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 10px;
+            color: #666;
+            transition: all 0.5s ease;
+        }
+
+        .mood-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            transition: all 0.5s ease;
+        }
+
+        /* Auth Modal */
+        #authOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(8px);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+    </style>
 </head>
-<body class="bg-slate-900 text-white min-h-screen font-sans">
-    <div class="container mx-auto p-8 max-w-2xl">
-        <header class="mb-8 text-center">
-            <h1 class="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600">
-                OROLAR PLATFORM
-            </h1>
-            <p class="text-slate-400 mt-2">Harmonic Resonance AI Interface</p>
-        </header>
+<body>
 
-        <!-- Auth Section -->
-        <div id="authSection" class="bg-slate-800 p-6 rounded-lg shadow-lg mb-6">
-            <h2 class="text-xl font-bold mb-4">🔮 Login / Register</h2>
-            <div class="flex gap-2">
-                <input id="email" type="email" placeholder="Email" class="bg-slate-700 p-2 rounded w-full text-white">
-                <input id="password" type="password" placeholder="Password" class="bg-slate-700 p-2 rounded w-full text-white">
-            </div>
-            <div class="mt-4 flex gap-4">
-                <button onclick="login()" class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded transition">Login</button>
-                <button onclick="register()" class="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded transition">Register</button>
-            </div>
-            <p id="authStatus" class="mt-2 text-sm text-yellow-400"></p>
-        </div>
+    <canvas id="neural-shader"></canvas>
 
-        <!-- Chat Section (Hidden by default) -->
-        <div id="chatSection" class="hidden bg-slate-800 p-6 rounded-lg shadow-lg">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold">💬 Resonance Chat</h2>
-                <span id="userBalance" class="text-green-400 font-mono">$0.00</span>
-            </div>
+    <!-- Auth Modal -->
+    <div id="authOverlay">
+        <div class="glass-panel p-8 rounded-2xl w-full max-w-md text-center">
+            <h2 class="text-2xl font-bold mb-2 text-white tracking-widest">OROLAR ACCESS</h2>
+            <p class="text-xs text-blue-400 mb-6 font-mono">IDENTIFY YOURSELF</p>
 
-            <div id="chatBox" class="bg-slate-900 h-64 overflow-y-auto p-4 rounded mb-4 border border-slate-700">
-                <p class="text-slate-500 text-center">System initialized. Waiting for input...</p>
-            </div>
+            <div class="space-y-4">
+                <input id="authEmail" type="email" placeholder="Email Frequency" class="w-full bg-black/50 border border-gray-700 rounded-lg p-3 text-white focus:border-blue-500 focus:outline-none transition-colors">
+                <input id="authPassword" type="password" placeholder="Passphrase" class="w-full bg-black/50 border border-gray-700 rounded-lg p-3 text-white focus:border-blue-500 focus:outline-none transition-colors">
 
-            <div class="flex gap-2">
-                <select id="modelSelect" class="bg-slate-700 p-2 rounded text-white">
-                    <option value="gemini">Gemini (Fast)</option>
-                    <option value="claude">Claude (Smart)</option>
-                    <option value="gpt">GPT-4 (Power)</option>
-                    <option value="grok">Grok (xAI)</option>
-                </select>
-                <input id="messageInput" type="text" placeholder="Type your message..." class="bg-slate-700 p-2 rounded w-full text-white">
-                <button onclick="sendMessage()" class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded">Send</button>
+                <div class="flex gap-3 mt-6">
+                    <button onclick="handleLogin()" class="flex-1 bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/50 text-blue-200 py-3 rounded-lg transition-all font-bold tracking-wider">
+                        LOGIN
+                    </button>
+                    <button onclick="handleRegister()" class="flex-1 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/50 text-purple-200 py-3 rounded-lg transition-all font-bold tracking-wider">
+                        REGISTER
+                    </button>
+                </div>
+                <p id="authMessage" class="text-xs text-red-400 h-4"></p>
             </div>
         </div>
     </div>
 
-    <script src="js/app.js"></script>
+    <div class="ui-wrapper">
+
+        <header class="glass-panel mx-4 mt-4 p-4 rounded-2xl flex justify-between items-center">
+            <div class="flex flex-col">
+                <h1 class="text-xl font-bold tracking-[0.2em] text-white">OROLAR <span class="text-blue-500 font-light">AI</span></h1>
+                <span class="text-[10px] text-blue-400/50 uppercase tracking-widest font-mono">Genesis Engine v4.0 // Eric's Protocol</span>
+            </div>
+            <div class="hidden md:flex gap-6 items-center">
+                <select id="modelSelect" class="bg-black/30 border border-gray-700 text-xs text-gray-300 rounded px-2 py-1 focus:outline-none">
+                    <option value="claude">Claude Sonnet</option>
+                    <option value="gpt">GPT-4</option>
+                    <option value="gemini">Gemini Flash</option>
+                    <option value="grok">Grok Beta</option>
+                </select>
+                <div class="mood-indicator" id="moodIndicator">
+                    <div class="mood-dot" id="moodDot"></div>
+                    <span id="moodText">IDLE</span>
+                </div>
+                <button onclick="logout()" class="text-xs text-red-400 hover:text-red-300 border border-red-900/50 px-2 py-1 rounded bg-red-900/20">LOGOUT</button>
+            </div>
+        </header>
+
+        <main id="chat-container">
+            <div class="msg ai">
+                [SYSTEM]: การเชื่อมต่อเสถียร... <br>
+                สวัสดีครับ ผมคือ Orolar AI ยินดีที่ได้พบคุณใน Genesis Interface มีอะไรให้ผมช่วยสามารถถามได้เลย?
+            </div>
+        </main>
+
+        <footer class="input-box-area">
+            <div class="glass-panel main-input rounded-full p-2 flex items-center gap-2 group max-w-4xl mx-auto">
+                <input id="userInput" type="text"
+                    class="bg-transparent border-none text-white w-full px-6 py-3 text-sm focus:outline-none placeholder-gray-600"
+                    placeholder="ป้อนคำสั่งหรือคำถามเพื่อเริ่มต้นการสนทนา..."
+                    autocomplete="off"
+                    onkeydown="if(event.key==='Enter') send()">
+
+                <button onclick="send()" id="sendBtn"
+                    class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg active:scale-95">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                </button>
+            </div>
+            <p class="text-[9px] text-center mt-3 text-gray-600 tracking-[0.3em] font-mono uppercase">
+                Privacy Guaranteed by Governance Laws &bull; Silent Core Active
+            </p>
+        </footer>
+
+    </div>
+
+    <script>
+        // --- AUTH SYSTEM ---
+        let token = localStorage.getItem('token');
+        const authOverlay = document.getElementById('authOverlay');
+        const authMessage = document.getElementById('authMessage');
+
+        function checkAuth() {
+            if (token) {
+                authOverlay.classList.add('hidden');
+            } else {
+                authOverlay.classList.remove('hidden');
+            }
+        }
+        checkAuth();
+
+        async function handleLogin() {
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPassword').value;
+            authMessage.innerText = "Authenticating...";
+
+            try {
+                const formData = new FormData();
+                formData.append('username', email);
+                formData.append('password', password);
+
+                const res = await fetch('/auth/login', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    token = data.access_token;
+                    localStorage.setItem('token', token);
+                    checkAuth();
+                } else {
+                    authMessage.innerText = "Access Denied: Invalid Credentials";
+                }
+            } catch (e) {
+                authMessage.innerText = "Connection Failed";
+            }
+        }
+
+        async function handleRegister() {
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPassword').value;
+            authMessage.innerText = "Creating Identity...";
+
+            try {
+                const res = await fetch('/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password, full_name: "User" })
+                });
+
+                if (res.ok) {
+                    authMessage.innerText = "Identity Created. Please Login.";
+                } else {
+                    const data = await res.json();
+                    authMessage.innerText = "Error: " + data.detail;
+                }
+            } catch (e) {
+                authMessage.innerText = "Connection Failed";
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            token = null;
+            location.reload();
+        }
+
+        // --- MOOD SYSTEM ---
+        const MOODS = {
+            idle: { color: [220, 220, 220], intensity: 0.3, name: 'IDLE', label: 'พร้อมใช้งาน' },
+            relaxed: { color: [34, 197, 94], intensity: 0.4, name: 'RELAXED', label: 'ผ่อนคลาย' },
+            happy: { color: [125, 211, 252], intensity: 0.5, name: 'HAPPY', label: 'อารมณ์ดี' },
+            thinking: { color: [37, 99, 235], intensity: 0.7, name: 'THINKING', label: 'กำลังคิด' },
+            concerned: { color: [239, 68, 68], intensity: 0.6, name: 'CONCERNED', label: 'ไม่โอเค' },
+            confused: { color: [161, 98, 7], intensity: 0.5, name: 'CONFUSED', label: 'ไม่เข้าใจ' }
+        };
+
+        // --- CHAT SYSTEM ---
+        const container = document.getElementById('chat-container');
+        const input = document.getElementById('userInput');
+        const btn = document.getElementById('sendBtn');
+        const moodDot = document.getElementById('moodDot');
+        const moodText = document.getElementById('moodText');
+        const modelSelect = document.getElementById('modelSelect');
+
+        function updateMoodUI(mood) {
+            const m = MOODS[mood];
+            moodDot.style.backgroundColor = `rgb(${m.color[0]}, ${m.color[1]}, ${m.color[2]})`;
+            moodDot.style.boxShadow = `0 0 12px rgba(${m.color[0]}, ${m.color[1]}, ${m.color[2]}, 0.6)`;
+            moodText.textContent = m.name;
+            moodText.style.color = `rgb(${m.color[0]}, ${m.color[1]}, ${m.color[2]})`;
+        }
+
+        async function send() {
+            const text = input.value.trim();
+            if (!text) return;
+
+            // Prevent sending if not authenticated
+            if (!token) {
+                alert("Please login first");
+                return;
+            }
+
+            addMessage('human', text);
+            input.value = '';
+            input.disabled = true;
+            btn.disabled = true;
+
+            // เริ่มคิด
+            visualEngine.setMood('thinking');
+            updateMoodUI('thinking');
+
+            const loadingId = addMessage('ai', 'กำลังประมวลผล', true);
+
+            try {
+                // Call Real Backend
+                const response = await fetch('/chat/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        message: text,
+                        model: modelSelect.value
+                    })
+                });
+
+                const data = await response.json();
+                removeMessage(loadingId);
+
+                if (response.ok) {
+                    addMessage('ai', data.text);
+                    addMessage('wisdom', `Cost: $${data.cost.toFixed(4)} | Model: ${data.model}`);
+                    visualEngine.setMood('happy');
+                    updateMoodUI('happy');
+                } else {
+                    addMessage('error', `Error: ${data.detail}`);
+                    visualEngine.setMood('concerned');
+                    updateMoodUI('concerned');
+
+                    if (response.status === 401) {
+                        logout();
+                    }
+                }
+
+                // กลับสู่โหมด idle หลัง 4 วินาที
+                setTimeout(() => {
+                    visualEngine.setMood('idle');
+                    updateMoodUI('idle');
+                }, 4000);
+
+            } catch (err) {
+                console.error(err);
+                removeMessage(loadingId);
+                addMessage('error', '⚡ เกิดข้อผิดพลาดการเชื่อมต่อ: ' + err.message);
+                visualEngine.setMood('concerned');
+                updateMoodUI('concerned');
+            } finally {
+                input.disabled = false;
+                btn.disabled = false;
+                input.focus();
+            }
+        }
+
+        function addMessage(type, text, isLoading = false) {
+            const div = document.createElement('div');
+            div.className = `msg ${type} ${isLoading ? 'loading-dots' : ''}`;
+            div.id = 'msg-' + Date.now();
+            div.innerHTML = text.replace(/\n/g, '<br>');
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+            return div.id;
+        }
+
+        function removeMessage(id) {
+            const el = document.getElementById(id);
+            if(el) el.remove();
+        }
+
+        // --- VISUAL ENGINE: AURA SYSTEM ---
+        class AuraVisualizer {
+            constructor() {
+                this.canvas = document.getElementById('neural-shader');
+                this.ctx = this.canvas.getContext('2d');
+                this.particles = [];
+                this.currentMood = MOODS.idle;
+                this.targetMood = MOODS.idle;
+                this.transitionProgress = 1;
+
+                this.init();
+                window.addEventListener('resize', () => this.resize());
+            }
+
+            init() {
+                this.resize();
+                // สร้าง particles ที่ลอยขึ้นจากด้านล่าง
+                for (let i = 0; i < 80; i++) {
+                    this.createParticle();
+                }
+                this.render();
+            }
+
+            createParticle() {
+                this.particles.push({
+                    x: Math.random() * this.canvas.width,
+                    y: this.canvas.height + Math.random() * 100,
+                    vx: (Math.random() - 0.5) * 0.5,
+                    vy: -0.5 - Math.random() * 1.5,
+                    size: Math.random() * 3 + 1,
+                    alpha: Math.random() * 0.5 + 0.3,
+                    wobble: Math.random() * Math.PI * 2,
+                    wobbleSpeed: 0.02 + Math.random() * 0.03
+                });
+            }
+
+            resize() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+
+            setMood(moodKey) {
+                this.targetMood = MOODS[moodKey];
+                this.transitionProgress = 0;
+            }
+
+            interpolateColor(progress) {
+                const from = this.currentMood.color;
+                const to = this.targetMood.color;
+                return [
+                    Math.round(from[0] + (to[0] - from[0]) * progress),
+                    Math.round(from[1] + (to[1] - from[1]) * progress),
+                    Math.round(from[2] + (to[2] - from[2]) * progress)
+                ];
+            }
+
+            render() {
+                // Smooth transition
+                if (this.transitionProgress < 1) {
+                    this.transitionProgress += 0.02;
+                    if (this.transitionProgress >= 1) {
+                        this.currentMood = this.targetMood;
+                    }
+                }
+
+                const color = this.interpolateColor(this.transitionProgress);
+                const intensity = this.currentMood.intensity + (this.targetMood.intensity - this.currentMood.intensity) * this.transitionProgress;
+
+                // Background fade
+                this.ctx.fillStyle = 'rgba(5, 5, 5, 0.1)';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // Update and draw particles
+                for (let i = this.particles.length - 1; i >= 0; i--) {
+                    const p = this.particles[i];
+
+                    // Update position
+                    p.wobble += p.wobbleSpeed;
+                    p.x += p.vx + Math.sin(p.wobble) * 0.3;
+                    p.y += p.vy;
+
+                    // Reset particle if it goes off screen
+                    if (p.y < -50 || p.x < -50 || p.x > this.canvas.width + 50) {
+                        this.particles.splice(i, 1);
+                        this.createParticle();
+                        continue;
+                    }
+
+                    // Draw particle
+                    const alpha = p.alpha * intensity;
+                    this.ctx.fillStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${alpha})`;
+                    this.ctx.beginPath();
+                    this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    this.ctx.fill();
+
+                    // Draw glow
+                    const gradient = this.ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 4);
+                    gradient.addColorStop(0, `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${alpha * 0.3})`);
+                    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                    this.ctx.fillStyle = gradient;
+                    this.ctx.beginPath();
+                    this.ctx.arc(p.x, p.y, p.size * 4, 0, Math.PI * 2);
+                    this.ctx.fill();
+                }
+
+                // Add ambient glow at bottom
+                const bottomGlow = this.ctx.createRadialGradient(
+                    this.canvas.width / 2, this.canvas.height, 0,
+                    this.canvas.width / 2, this.canvas.height, this.canvas.height * 0.6
+                );
+                bottomGlow.addColorStop(0, `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${intensity * 0.15})`);
+                bottomGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                this.ctx.fillStyle = bottomGlow;
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                requestAnimationFrame(() => this.render());
+            }
+        }
+
+        const visualEngine = new AuraVisualizer();
+        updateMoodUI('idle');
+
+    </script>
 </body>
 </html>
